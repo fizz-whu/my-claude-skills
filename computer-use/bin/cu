@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PY="$DIR/.venv/bin/python"
+
+if [ ! -x "$PY" ]; then
+  echo "computer-use skill not installed. Run: $DIR/setup.sh" >&2
+  exit 2
+fi
+
+cmd="${1:-}"
+shift || true
+
+case "$cmd" in
+  screenshot|activate|click|key|scroll|move|list_windows|tab)
+    exec "$PY" "$DIR/scripts/$cmd.py" "$@"
+    ;;
+  type)
+    exec "$PY" "$DIR/scripts/type_text.py" "$@"
+    ;;
+  ""|-h|--help)
+    cat <<'EOF'
+cu - computer-use skill dispatcher
+
+Commands:
+  cu screenshot                          -> {ok, path, width, height}
+  cu activate <bundle_id>                -> activate app, e.g. com.apple.Safari
+  cu click <x> <y> [--button left|right|middle] [--count N]
+  cu type <text> [--paste]               (default: char-by-char; --paste uses cmd+V, fragile in Citrix/RDP)
+  cu key <combo>                         e.g. cmd+t, ctrl+shift+a, enter
+  cu tab [count] [--shift]               press Tab N times — preferred way to step through form fields in remoted apps
+  cu scroll <x> <y> <dy>                 (dy>0 up, dy<0 down)
+  cu move <x> <y>
+  cu list_windows <bundle_id>
+
+Output: single JSON object on stdout. Non-zero exit on failsafe / error.
+EOF
+    ;;
+  *)
+    echo "unknown command: $cmd  (try: cu --help)" >&2
+    exit 2
+    ;;
+esac
